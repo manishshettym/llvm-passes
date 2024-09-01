@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(LLVMHelloWorld)
+project(LLVMPassPlugin)
 
 # Locate LLVM package
 find_package(LLVM REQUIRED CONFIG)
