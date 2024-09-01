@@ -3,18 +3,23 @@ set(LLVM_LINK_COMPONENTS
   Support
 )
 
-add_library(LLVMHelloWorld MODULE HelloWorld.cpp)
+add_library(LLVMPassPlugin MODULE 
+  HelloWorld.cpp
+  PointerDereference.cpp
+  Plugin.cpp
+)
+
 llvm_map_components_to_libnames(llvm_libs ${LLVM_LINK_COMPONENTS})
-target_link_libraries(LLVMHelloWorld ${llvm_libs})
+target_link_libraries(LLVMPassPlugin ${llvm_libs})
 
 # The shared library extension is not .so on Windows.
 if (WIN32 OR CYGWIN)
-  set(LLVMHelloWorld_name "LLVMHelloWorld${CMAKE_SHARED_LIBRARY_SUFFIX}")
+  set(LLVMPassPlugin_name "LLVMPassPlugin${CMAKE_SHARED_LIBRARY_SUFFIX}")
 else()
-  set(LLVMHelloWorld_name "LLVMHelloWorld.so")
+  set(LLVMPassPlugin_name "LLVMPassPlugin.so")
 endif()
 
 # Place the output in the bin directory for convenience
-set_target_properties(LLVMHelloWorld PROPERTIES
+set_target_properties(LLVMPassPlugin PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
