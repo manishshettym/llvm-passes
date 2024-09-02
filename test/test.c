@@ -1,10 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// global variable
+int globalVar = 10;
+
 void pointerOperations()
 {
     int arr[5] = {1, 2, 3, 4, 5};
     int *ptr = arr;
+
+    // update global variable
+    globalVar = 20;
 
     // Perform pointer arithmetic
     ptr += 3;

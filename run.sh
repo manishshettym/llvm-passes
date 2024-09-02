@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Check if the pass name is provided
+if [ -z "$1" ]; then
+  echo "Usage: $0 <pass-name>"
+  echo "Available options: hello-world, raw-pointer-deref, static-var-access"
+  exit 1
+fi
+
+PASS_NAME=$1
+
 cd "$(dirname "$0")"
 
 CLANG=$(which clang)
@@ -14,9 +23,12 @@ fi
 
 $CLANG -S -emit-llvm -O0 -Xclang -disable-O0-optnone ./test/test.c -o ./test/test.ll
 
-$OPT -load-pass-plugin $PASS_PLUGIN_PATH -passes="hello-world,raw-pointer-deref" < ./test/test.ll >/dev/null 2>./test/logs.log
+$OPT -load-pass-plugin $PASS_PLUGIN_PATH -passes="$PASS_NAME" < ./test/test.ll >/dev/null 2>./test/logs.log
 
 echo "Pass has been run. Output is in ./test/logs.log"
 
 # cleanup
 rm ./test/test.ll
+
+# print the output
+cat ./test/logs.log
