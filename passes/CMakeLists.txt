@@ -6,6 +6,7 @@ set(LLVM_LINK_COMPONENTS
 add_library(LLVMPassPlugin MODULE 
   HelloWorld.cpp
   PointerDereference.cpp
+  StaticVarAccess.cpp
   Plugin.cpp
 )
 
