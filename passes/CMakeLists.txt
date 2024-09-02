@@ -7,6 +7,8 @@ add_library(LLVMPassPlugin MODULE
   HelloWorld.cpp
   PointerDereference.cpp
   StaticVarAccess.cpp
+  MemoryAlloc.cpp
+  ExternalCall.cpp
   Plugin.cpp
 )
 

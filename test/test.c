@@ -33,5 +33,12 @@ void pointerOperations()
 int main()
 {
     pointerOperations();
+
+    // create a function pointer
+    void (*funPtr)() = pointerOperations;
+
+    // call the function using function pointer
+    funPtr();
+
     return 0;
 }

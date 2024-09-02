@@ -6,6 +6,8 @@
 #include "HelloWorld.cpp"
 #include "PointerDereference.cpp"
 #include "StaticVarAccess.cpp"
+#include "MemoryAlloc.cpp"
+#include "ExternalCall.cpp"
 
 using namespace llvm;
 
@@ -27,6 +29,16 @@ extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo()
                     if (Name == "raw-pointer-deref")
                     {
                         FPM.addPass(RawPointerDereferenceDetector());
+                        return true;
+                    }
+                    if (Name == "memory-alloc")
+                    {
+                        FPM.addPass(MemoryAllocationDetector());
+                        return true;
+                    }
+                    if (Name == "external-call")
+                    {
+                        FPM.addPass(ExternalFunctionCallDetector());
                         return true;
                     }
                     return false;
