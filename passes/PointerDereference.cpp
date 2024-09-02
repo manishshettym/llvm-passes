@@ -1,7 +1,7 @@
-// RawPointerDereferenceDetector.cpp
 #include "llvm/IR/PassManager.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Passes/PassBuilder.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/Support/raw_ostream.h"
 
 using namespace llvm;
@@ -13,19 +13,37 @@ namespace
     public:
         PreservedAnalyses run(Function &F, FunctionAnalysisManager &)
         {
-            for (BasicBlock &BB : F)
+            for (auto &BB : F)
             {
-                for (Instruction &I : BB)
+                for (auto &I : BB)
                 {
+                    // Detect direct dereferencing of pointers
+                    if (auto *LI = dyn_cast<LoadInst>(&I))
+                    {
+                        if (LI->getPointerOperand()->getType()->isPointerTy())
+                        {
+                            errs() << "Direct pointer dereference (load) detected in function "
+                                   << F.getName() << ": " << *LI << "\n";
+                        }
+                    }
+                    else if (auto *SI = dyn_cast<StoreInst>(&I))
+                    {
+                        if (SI->getPointerOperand()->getType()->isPointerTy())
+                        {
+                            errs() << "Direct pointer dereference (store) detected in function "
+                                   << F.getName() << ": " << *SI << "\n";
+                        }
+                    }
+
                     // Detect pointer arithmetic (e.g., ptr++, ptr + n)
-                    if (auto *GEP = dyn_cast<GetElementPtrInst>(&I))
+                    else if (auto *GEP = dyn_cast<GetElementPtrInst>(&I))
                     {
                         errs() << "Pointer arithmetic detected in function "
                                << F.getName() << ": " << *GEP << "\n";
                     }
 
                     // Detect casts to pointers (e.g., (int *) ptr)
-                    if (auto *CI = dyn_cast<CastInst>(&I))
+                    else if (auto *CI = dyn_cast<CastInst>(&I))
                     {
                         if (CI->getDestTy()->isPointerTy())
                         {
