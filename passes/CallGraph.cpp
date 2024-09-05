@@ -13,7 +13,6 @@ namespace
 
     struct FunctionInfo
     {
-        unsigned BasicBlockCount = 0;
         unsigned CallCount = 0;
         bool IsRecursive = false;
         std::vector<std::string> DirectCalls;
@@ -41,11 +40,9 @@ namespace
 
             json::Object Node;
             Node["name"] = F->getName();
-            Node["internal_linkage"] = F->hasInternalLinkage();
             Node["variadic"] = F->isVarArg();
 
             const auto &FuncInfo = FuncInfoMap.at(F);
-            Node["basic_block_count"] = FuncInfo.BasicBlockCount;
             Node["call_count"] = FuncInfo.CallCount;
             Node["is_recursive"] = FuncInfo.IsRecursive;
 
@@ -86,7 +83,6 @@ namespace
                     continue;
 
                 FunctionInfo &FI = FuncInfoMap[&F];
-                FI.BasicBlockCount = F.size();
 
                 for (BasicBlock &BB : F)
                 {
@@ -109,7 +105,17 @@ namespace
                             else
                             {
                                 // Indirect call
-                                FI.IndirectCalls.push_back("unknown");
+                                Value *CalledValue = CI->getCalledOperand()->stripPointerCasts();
+                                if (isa<Function>(CalledValue))
+                                {
+                                    Callee = cast<Function>(CalledValue);
+                                    FI.IndirectCalls.push_back(Callee->getName().str());
+                                    CG[&F]->addCalledFunction(CI, CG[Callee]);
+                                }
+                                else
+                                {
+                                    FI.IndirectCalls.push_back("unknown");
+                                }
                             }
                         }
                     }
