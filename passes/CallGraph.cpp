@@ -2,9 +2,14 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/Pass.h"
 #include "llvm/Analysis/CallGraph.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/BasicAliasAnalysis.h"
+#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
+#include "llvm/Analysis/ScopedNoAliasAA.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/FileSystem.h"
 #include "llvm/Support/JSON.h"
+#include "llvm/IR/PassManager.h"
 
 using namespace llvm;
 
@@ -77,10 +82,15 @@ namespace
             CallGraph CG(M);
             std::map<const Function *, FunctionInfo> FuncInfoMap;
 
+            auto &FAM =
+                MAM.getResult<FunctionAnalysisManagerModuleProxy>(M).getManager();
+
             for (Function &F : M)
             {
                 if (F.isDeclaration())
                     continue;
+
+                auto &AA = FAM.getResult<AAManager>(F);
 
                 FunctionInfo &FI = FuncInfoMap[&F];
 
@@ -90,33 +100,7 @@ namespace
                     {
                         if (auto *CI = dyn_cast<CallInst>(&I))
                         {
-                            Function *Callee = CI->getCalledFunction();
-                            if (Callee)
-                            {
-                                // Direct call
-                                CG[&F]->addCalledFunction(CI, CG[Callee]);
-                                FI.DirectCalls.push_back(Callee->getName().str());
-                                FuncInfoMap[Callee].CallCount++;
-                                if (Callee == &F)
-                                {
-                                    FI.IsRecursive = true;
-                                }
-                            }
-                            else
-                            {
-                                // Indirect call
-                                Value *CalledValue = CI->getCalledOperand()->stripPointerCasts();
-                                if (isa<Function>(CalledValue))
-                                {
-                                    Callee = cast<Function>(CalledValue);
-                                    FI.IndirectCalls.push_back(Callee->getName().str());
-                                    CG[&F]->addCalledFunction(CI, CG[Callee]);
-                                }
-                                else
-                                {
-                                    FI.IndirectCalls.push_back("unknown");
-                                }
-                            }
+                            handleCallInstruction(CI, CG, FI, F, AA, M, FuncInfoMap);
                         }
                     }
                 }
@@ -126,6 +110,75 @@ namespace
             writeCallGraphToJSON(CG, FuncInfoMap, "callgraph.json");
 
             return PreservedAnalyses::all();
+        }
+
+    private:
+        void handleCallInstruction(CallInst *CI, CallGraph &CG, FunctionInfo &FI, Function &F,
+                                   AAResults &AA, Module &M, std::map<const Function *, FunctionInfo> &FuncInfoMap)
+        {
+            Function *Callee = CI->getCalledFunction();
+            if (Callee)
+            {
+                // Direct call
+                handleDirectCall(CI, Callee, CG, FI, F, FuncInfoMap);
+            }
+            else
+            {
+                // Indirect call
+                handleIndirectCall(CI, CG, FI, F, AA, M, FuncInfoMap);
+            }
+        }
+
+        void handleDirectCall(CallInst *CI, Function *Callee, CallGraph &CG, FunctionInfo &FI, Function &F,
+                              std::map<const Function *, FunctionInfo> &FuncInfoMap)
+        {
+            CG[&F]->addCalledFunction(CI, CG[Callee]);
+            FI.DirectCalls.push_back(Callee->getName().str());
+            FuncInfoMap[Callee].CallCount++;
+            if (Callee == &F)
+            {
+                FI.IsRecursive = true;
+            }
+        }
+
+        void handleIndirectCall(CallInst *CI, CallGraph &CG, FunctionInfo &FI, Function &F,
+                                AAResults &AA, Module &M, std::map<const Function *, FunctionInfo> &FuncInfoMap)
+        {
+            Value *CalledValue = CI->getCalledOperand()->stripPointerCasts();
+
+            // Use alias analysis to find possible targets
+            std::vector<Function *> PossibleTargets;
+            for (Function &PossibleCallee : M)
+            {
+                if (AA.isMustAlias(&PossibleCallee, CalledValue))
+                {
+                    PossibleTargets.clear();
+                    PossibleTargets.push_back(&PossibleCallee);
+                    break;
+                }
+                else if (!AA.isNoAlias(&PossibleCallee, CalledValue))
+                {
+                    // may alias, but only include if the function type matches
+                    if (PossibleCallee.getFunctionType() == CI->getFunctionType())
+                    {
+                        PossibleTargets.push_back(&PossibleCallee);
+                    }
+                }
+            }
+
+            if (PossibleTargets.empty())
+            {
+                FI.IndirectCalls.push_back("unknown");
+            }
+            else
+            {
+                for (Function *Target : PossibleTargets)
+                {
+                    CG[&F]->addCalledFunction(CI, CG[Target]);
+                    FI.IndirectCalls.push_back(Target->getName().str());
+                    FuncInfoMap[Target].CallCount++;
+                }
+            }
         }
     };
 } // end anonymous namespace
