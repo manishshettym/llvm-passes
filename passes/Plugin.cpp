@@ -1,6 +1,8 @@
 #include "llvm/IR/PassManager.h"
 #include "llvm/Passes/PassPlugin.h"
 #include "llvm/Passes/PassBuilder.h"
+#include "llvm/Analysis/AliasAnalysis.h"
+#include "llvm/Analysis/TargetLibraryInfo.h"
 
 // Include pass headers
 #include "HelloWorld.cpp"
@@ -18,6 +20,16 @@ extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo()
         LLVM_PLUGIN_API_VERSION, "MyPasses", LLVM_VERSION_STRING,
         [](PassBuilder &PB)
         {
+            // Register analyses
+            PB.registerAnalysisRegistrationCallback(
+                [](FunctionAnalysisManager &FAM)
+                {
+                    FAM.registerPass([&]
+                                     { return TargetLibraryAnalysis(); });
+                    FAM.registerPass([&]
+                                     { return AAManager(); });
+                });
+
             // Register function passes
             PB.registerPipelineParsingCallback(
                 [](StringRef Name, FunctionPassManager &FPM, ArrayRef<PassBuilder::PipelineElement>)

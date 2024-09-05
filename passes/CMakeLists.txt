@@ -2,14 +2,15 @@ set(LLVM_LINK_COMPONENTS
   Core
   Support
   Analysis
+  Passes
 )
 
 add_library(LLVMPassPlugin MODULE 
-  HelloWorld.cpp
-  PointerDereference.cpp
-  StaticVarAccess.cpp
-  MemoryAlloc.cpp
-  ExternalCall.cpp
+  # HelloWorld.cpp
+  # PointerDereference.cpp
+  # StaticVarAccess.cpp
+  # MemoryAlloc.cpp
+  # ExternalCall.cpp
   CallGraph.cpp
   Plugin.cpp
 )
