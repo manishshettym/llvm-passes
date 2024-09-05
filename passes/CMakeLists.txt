@@ -1,6 +1,7 @@
 set(LLVM_LINK_COMPONENTS
   Core
   Support
+  Analysis
 )
 
 add_library(LLVMPassPlugin MODULE 
@@ -9,6 +10,7 @@ add_library(LLVMPassPlugin MODULE
   StaticVarAccess.cpp
   MemoryAlloc.cpp
   ExternalCall.cpp
+  CallGraph.cpp
   Plugin.cpp
 )
 
@@ -21,6 +23,14 @@ if (WIN32 OR CYGWIN)
 else()
   set(LLVMPassPlugin_name "LLVMPassPlugin.so")
 endif()
+
+# Ensure all LLVM symbols are available
+if(NOT LLVM_ENABLE_RTTI)
+  set_target_properties(LLVMPassPlugin PROPERTIES
+    COMPILE_FLAGS "-fno-rtti"
+  )
+endif()
+
 
 # Place the output in the bin directory for convenience
 set_target_properties(LLVMPassPlugin PROPERTIES

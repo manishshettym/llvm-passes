@@ -8,6 +8,7 @@
 #include "StaticVarAccess.cpp"
 #include "MemoryAlloc.cpp"
 #include "ExternalCall.cpp"
+#include "CallGraph.cpp"
 
 using namespace llvm;
 
@@ -51,6 +52,11 @@ extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo()
                     if (Name == "static-var-access")
                     {
                         MPM.addPass(StaticVarAccessDetector());
+                        return true;
+                    }
+                    if (Name == "call-graph")
+                    {
+                        MPM.addPass(CallGraphPass());
                         return true;
                     }
                     return false;
