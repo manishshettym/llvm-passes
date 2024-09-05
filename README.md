@@ -1,6 +1,4 @@
-# crust-llvm
-LLVM passes do detect potential sources of safety violations in c2rust
-
+# llvm-passes
 
 ## Building
 
@@ -34,4 +32,4 @@ The following passes are available:
 - `static-var-access`: A pass that detects read/write to mutable global (static) or external variables.
 - `memory-alloc`: A pass that detects memory allocation and deallocation in the code.
 - `external-call`: A pass that detects external function calls (other than one defined in the same program, malloc, and free). Also detects calls made via function pointers.
-- `unsafe-cast`: A pass that detects unsafe casts in the code.
+- `call-graph`: A pass that generates the callgraph for programs.
