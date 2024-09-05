@@ -1,44 +1,76 @@
 #include <stdio.h>
-#include <stdlib.h>
 
-// global variable
-int globalVar = 10;
-
-void pointerOperations()
+// Define a struct with a function pointer
+struct Operation
 {
-    int arr[5] = {1, 2, 3, 4, 5};
-    int *ptr = arr;
+    int (*op_func)(int, int);
+};
 
-    // update global variable
-    globalVar = 20;
-
-    // Perform pointer arithmetic
-    ptr += 3;
-    printf("Pointer Arithmetic Result: %d\n", *ptr);
-
-    int a = 10;
-    void *voidPtr = &a;
-
-    // Cast void pointer to int pointer and dereference
-    int *intPtr = (int *)voidPtr;
-    printf("Pointer Cast Result: %d\n", *intPtr);
-
-    int *rawPtr = (int *)malloc(sizeof(int));
-    *rawPtr = 20; // Dereference raw pointer to assign value
-
-    printf("Raw Pointer Dereference Result: %d\n", *rawPtr);
-    free(rawPtr);
+// Basic function declarations
+int add(int a, int b)
+{
+    return a + b;
 }
 
+int subtract(int a, int b)
+{
+    return a - b;
+}
+
+// Function using struct and function pointer
+int operate(struct Operation *op, int x, int y)
+{
+    return op->op_func(x, y);
+}
+
+// Function to demonstrate recursive calls
+int factorial(int n)
+{
+    if (n <= 1)
+        return 1;
+    return n * factorial(n - 1);
+}
+
+// Function calling other functions
+void compute()
+{
+    struct Operation add_op = {.op_func = add};
+    struct Operation sub_op = {.op_func = subtract};
+
+    int a = 10, b = 5;
+
+    // Call with function pointer inside struct
+    printf("Addition: %d\n", operate(&add_op, a, b));
+    printf("Subtraction: %d\n", operate(&sub_op, a, b));
+
+    // Call to a recursive function
+    printf("Factorial: %d\n", factorial(5));
+}
+
+// A function that calls another function and uses a conditional
+void conditional_call(int condition)
+{
+    if (condition)
+    {
+        printf("Condition is true, calling add\n");
+        add(1, 2);
+    }
+    else
+    {
+        printf("Condition is false, calling subtract\n");
+        subtract(1, 2);
+    }
+}
+
+// Main function that calls multiple other functions
 int main()
 {
-    pointerOperations();
+    // Call compute which contains multiple function calls
+    compute();
 
-    // create a function pointer
-    void (*funPtr)() = pointerOperations;
-
-    // call the function using function pointer
-    funPtr();
+    // Test conditional function call
+    conditional_call(1);
+    conditional_call(0);
 
     return 0;
 }
